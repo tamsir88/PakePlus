@@ -1,32 +1,814 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <link rel="stylesheet" href="styles.css" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>PakePlus App</title>
-        <script type="module" src="/main.js" defer></script>
-    </head>
-
-    <body>
-        <main class="container">
-            <h1>Welcome to PakePlus</h1>
-            <form class="row" id="greet-form">
-                <input id="inputValue" placeholder="Enter a something..." />
-            </form>
-            <div class="resultBox">
-                <span>result: </span>
-                <span id="result"></span>
-            </div>
-            <div class="invokeBox">
-                <button id="openUrl">open_url_browser</button>
-                <button id="openUrlNew">open_url_new</button>
-                <button id="runCommand">run_command</button>
-                <button id="downloadFile">download_file</button>
-                <button id="getExeDir">get_exe_dir</button>
-                <button id="getEnvVar">get_env_var</button>
-                <button id="findPort">find_port</button>
-            </div>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LQWR - 舒尔特方格训练</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#F59E0B',
+                        dark: '#1E293B',
+                        light: '#F8FAFC'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .grid-cell {
+                @apply flex items-center justify-center rounded-lg transition-all duration-300 cursor-pointer font-medium shadow-md;
+            }
+            .grid-cell-active {
+                @apply bg-primary text-white transform scale-105 shadow-lg;
+            }
+            .grid-cell-completed {
+                @apply bg-secondary text-white;
+            }
+            .btn-primary {
+                @apply bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1;
+            }
+            .btn-secondary {
+                @apply bg-white hover:bg-gray-100 text-dark font-medium py-3 px-6 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1;
+            }
+            .mode-card {
+                @apply bg-white rounded-2xl p-6 shadow-lg transition-all duration-300 hover:shadow-xl transform hover:-translate-y-2 cursor-pointer flex flex-col items-center text-center;
+            }
+            .difficulty-btn {
+                @apply bg-white rounded-xl p-3 shadow-md transition-all duration-200 hover:shadow-lg transform hover:-translate-y-1 text-center;
+            }
+            .difficulty-btn-active {
+                @apply bg-primary text-white;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-light to-gray-100 min-h-screen font-sans text-dark">
+    <!-- 页面容器 -->
+    <div class="container mx-auto px-4 py-6 max-w-3xl">
+        <!-- 头部 -->
+        <header class="mb-8 text-center">
+            <h1 class="text-[clamp(2rem,5vw,3rem)] font-bold text-primary mb-2">LQWR</h1>
+            <p class="text-gray-600 text-lg">舒尔特方格训练系统</p>
+        </header>
+        
+        <!-- 主内容区 - 初始状态显示模式选择 -->
+        <main id="app-container">
+            <!-- 模式选择页面 -->
+            <section id="mode-selection" class="space-y-6">
+                <h2 class="text-2xl font-bold text-center mb-6">选择训练模式</h2>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- 数字模式 -->
+                    <div class="mode-card" data-mode="numbers">
+                        <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                            <i class="fa fa-hashtag text-2xl text-primary"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold">数字</h3>
+                        <p class="text-gray-500 text-sm mt-2">按顺序点击数字</p>
+                    </div>
+                    
+                    <!-- 字母模式 -->
+                    <div class="mode-card" data-mode="letters">
+                        <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                            <i class="fa fa-font text-2xl text-primary"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold">字母</h3>
+                        <p class="text-gray-500 text-sm mt-2">按顺序点击字母</p>
+                    </div>
+                    
+                    <!-- 古诗模式 -->
+                    <div class="mode-card" data-mode="poetry">
+                        <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                            <i class="fa fa-book text-2xl text-primary"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold">古诗</h3>
+                        <p class="text-gray-500 text-sm mt-2">按诗句顺序点击</p>
+                    </div>
+                    
+                    <!-- 国学模式 -->
+                    <div class="mode-card" data-mode="classics">
+                        <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                            <i class="fa fa-scroll text-2xl text-primary"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold">国学</h3>
+                        <p class="text-gray-500 text-sm mt-2">按经典语句顺序</p>
+                    </div>
+                    
+                    <!-- 速算模式 -->
+                    <div class="mode-card" data-mode="math">
+                        <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                            <i class="fa fa-calculator text-2xl text-primary"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold">速算</h3>
+                        <p class="text-gray-500 text-sm mt-2">计算并选择答案</p>
+                    </div>
+                    
+                    <!-- 找茬模式 -->
+                    <div class="mode-card" data-mode="find-diff">
+                        <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                            <i class="fa fa-search text-2xl text-primary"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold">找茬</h3>
+                        <p class="text-gray-500 text-sm mt-2">找出不同的元素</p>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- 难度选择页面 -->
+            <section id="difficulty-selection" class="hidden space-y-6">
+                <div class="flex justify-start mb-4">
+                    <button id="back-to-modes" class="flex items-center text-gray-600 hover:text-primary">
+                        <i class="fa fa-arrow-left mr-2"></i> 返回模式选择
+                    </button>
+                </div>
+                
+                <h2 class="text-2xl font-bold text-center mb-2">选择难度</h2>
+                <p class="text-center text-gray-600 mb-6">从3×3到9×9的方格</p>
+                
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="difficulty-btn" data-size="3">3×3</div>
+                    <div class="difficulty-btn" data-size="4">4×4</div>
+                    <div class="difficulty-btn" data-size="5">5×5</div>
+                    <div class="difficulty-btn" data-size="6">6×6</div>
+                    <div class="difficulty-btn" data-size="7">7×7</div>
+                    <div class="difficulty-btn" data-size="8">8×8</div>
+                    <div class="difficulty-btn" data-size="9">9×9</div>
+                </div>
+                
+                <div class="mt-8 text-center">
+                    <button id="start-training" class="btn-primary">
+                        开始训练 <i class="fa fa-play ml-2"></i>
+                    </button>
+                </div>
+            </section>
+            
+            <!-- 训练页面 -->
+            <section id="training-area" class="hidden space-y-6">
+                <div class="flex justify-between items-center mb-4">
+                    <button id="back-to-difficulty" class="flex items-center text-gray-600 hover:text-primary">
+                        <i class="fa fa-arrow-left mr-2"></i> 返回难度选择
+                    </button>
+                    
+                    <div class="flex items-center bg-white rounded-full px-4 py-2 shadow-md">
+                        <i class="fa fa-clock-o text-primary mr-2"></i>
+                        <span id="timer" class="font-mono text-lg">00:00.000</span>
+                    </div>
+                </div>
+                
+                <div id="mode-info" class="bg-white rounded-xl p-4 shadow-md text-center">
+                    <h2 class="text-xl font-bold" id="current-mode-text">数字训练</h2>
+                    <p class="text-gray-600" id="current-difficulty-text">3×3 方格</p>
+                </div>
+                
+                <!-- 提示信息 -->
+                <div id="instruction" class="bg-primary/10 rounded-xl p-4 text-center">
+                    <p id="instruction-text">请按顺序点击数字 1, 2, 3...</p>
+                </div>
+                
+                <!-- 方格容器 -->
+                <div id="grid-container" class="w-full aspect-square bg-white rounded-2xl shadow-lg p-2 flex items-center justify-center overflow-hidden">
+                    <!-- 方格将通过JS动态生成 -->
+                </div>
+                
+                <!-- 进度指示器 -->
+                <div class="bg-white rounded-xl p-4 shadow-md">
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div id="progress-bar" class="bg-primary h-2.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <div class="flex justify-between mt-2 text-sm text-gray-600">
+                        <span id="progress-text">0/9</span>
+                        <span id="current-target">当前目标: 1</span>
+                    </div>
+                </div>
+                
+                <!-- 控制按钮 -->
+                <div class="flex justify-between">
+                    <button id="restart-training" class="btn-secondary">
+                        <i class="fa fa-refresh mr-2"></i> 重新开始
+                    </button>
+                    <button id="end-training" class="btn-primary">
+                        结束训练 <i class="fa fa-stop ml-2"></i>
+                    </button>
+                </div>
+            </section>
+            
+            <!-- 结果页面 -->
+            <section id="results-area" class="hidden space-y-6">
+                <div class="bg-white rounded-2xl p-6 shadow-lg text-center">
+                    <h2 class="text-2xl font-bold text-primary mb-2">训练完成!</h2>
+                    <p class="text-gray-600 mb-6">恭喜您完成了本次舒尔特方格训练</p>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-gray-50 rounded-xl p-4">
+                            <p class="text-gray-500 text-sm">用时</p>
+                            <p id="result-time" class="text-2xl font-bold text-dark">00:05.234</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-xl p-4">
+                            <p class="text-gray-500 text-sm">难度</p>
+                            <p id="result-difficulty" class="text-2xl font-bold text-dark">3×3</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <p class="text-gray-500 mb-2">您的评价</p>
+                        <div id="performance-rating" class="text-3xl">
+                            <i class="fa fa-star text-accent"></i>
+                            <i class="fa fa-star text-accent"></i>
+                            <i class="fa fa-star text-accent"></i>
+                            <i class="fa fa-star text-accent"></i>
+                            <i class="fa fa-star text-accent"></i>
+                        </div>
+                        <p id="rating-text" class="mt-2 font-medium">优秀!</p>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button id="try-again" class="btn-primary flex-1">
+                        <i class="fa fa-refresh mr-2"></i> 再试一次
+                    </button>
+                    <button id="change-mode" class="btn-secondary flex-1">
+                        <i class="fa fa-th-large mr-2"></i> 更换模式
+                    </button>
+                </div>
+            </section>
         </main>
-    </body>
+        
+        <!-- 页脚 -->
+        <footer class="mt-12 text-center text-gray-500 text-sm">
+            <p>LQWR 舒尔特方格训练 &copy; 2023</p>
+            <p class="mt-1">提升注意力与反应速度</p>
+        </footer>
+    </div>
+    
+    <script>
+        // 应用状态
+        const appState = {
+            currentView: 'mode-selection', // mode-selection, difficulty-selection, training-area, results-area
+            selectedMode: null,
+            selectedSize: null,
+            gridData: [],
+            currentTarget: 1,
+            totalTargets: 0,
+            startTime: null,
+            endTime: null,
+            timerInterval: null,
+            isTraining: false
+        };
+        
+        // 古诗和国学内容示例
+        const poetryData = [
+            "床前明月光",
+            "疑是地上霜",
+            "举头望明月",
+            "低头思故乡",
+            "白日依山尽",
+            "黄河入海流",
+            "欲穷千里目",
+            "更上一层楼",
+            "春眠不觉晓",
+            "处处闻啼鸟",
+            "夜来风雨声",
+            "花落知多少"
+        ];
+        
+        const classicsData = [
+            "学而时习之",
+            "不亦说乎",
+            "有朋自远方来",
+            "不亦乐乎",
+            "人不知而不愠",
+            "不亦君子乎",
+            "三人行必有我师",
+            "温故而知新",
+            "知之为知之",
+            "不知为不知",
+            "是知也",
+            "己所不欲勿施于人"
+        ];
+        
+        // DOM 元素
+        const elements = {
+            modeSelection: document.getElementById('mode-selection'),
+            difficultySelection: document.getElementById('difficulty-selection'),
+            trainingArea: document.getElementById('training-area'),
+            resultsArea: document.getElementById('results-area'),
+            gridContainer: document.getElementById('grid-container'),
+            timer: document.getElementById('timer'),
+            progressBar: document.getElementById('progress-bar'),
+            progressText: document.getElementById('progress-text'),
+            currentTarget: document.getElementById('current-target'),
+            currentModeText: document.getElementById('current-mode-text'),
+            currentDifficultyText: document.getElementById('current-difficulty-text'),
+            instructionText: document.getElementById('instruction-text'),
+            resultTime: document.getElementById('result-time'),
+            resultDifficulty: document.getElementById('result-difficulty'),
+            performanceRating: document.getElementById('performance-rating'),
+            ratingText: document.getElementById('rating-text')
+        };
+        
+        // 事件监听器
+        function setupEventListeners() {
+            // 模式选择
+            document.querySelectorAll('.mode-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    appState.selectedMode = card.dataset.mode;
+                    switchView('difficulty-selection');
+                });
+            });
+            
+            // 返回按钮
+            document.getElementById('back-to-modes').addEventListener('click', () => {
+                switchView('mode-selection');
+            });
+            
+            document.getElementById('back-to-difficulty').addEventListener('click', () => {
+                stopTraining();
+                switchView('difficulty-selection');
+            });
+            
+            // 难度选择
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.difficulty-btn').forEach(b => {
+                        b.classList.remove('difficulty-btn-active');
+                    });
+                    btn.classList.add('difficulty-btn-active');
+                    appState.selectedSize = parseInt(btn.dataset.size);
+                });
+            });
+            
+            // 开始训练
+            document.getElementById('start-training').addEventListener('click', () => {
+                if (appState.selectedSize) {
+                    startTraining();
+                    switchView('training-area');
+                } else {
+                    alert('请选择难度级别');
+                }
+            });
+            
+            // 重新开始训练
+            document.getElementById('restart-training').addEventListener('click', () => {
+                startTraining();
+            });
+            
+            // 结束训练
+            document.getElementById('end-training').addEventListener('click', () => {
+                completeTraining();
+            });
+            
+            // 再试一次
+            document.getElementById('try-again').addEventListener('click', () => {
+                startTraining();
+                switchView('training-area');
+            });
+            
+            // 更换模式
+            document.getElementById('change-mode').addEventListener('click', () => {
+                switchView('mode-selection');
+            });
+        }
+        
+        // 切换视图
+        function switchView(viewName) {
+            appState.currentView = viewName;
+            
+            // 隐藏所有视图
+            elements.modeSelection.classList.add('hidden');
+            elements.difficultySelection.classList.add('hidden');
+            elements.trainingArea.classList.add('hidden');
+            elements.resultsArea.classList.add('hidden');
+            
+            // 显示选中的视图
+            switch(viewName) {
+                case 'mode-selection':
+                    elements.modeSelection.classList.remove('hidden');
+                    break;
+                case 'difficulty-selection':
+                    elements.difficultySelection.classList.remove('hidden');
+                    // 重置难度选择
+                    document.querySelectorAll('.difficulty-btn').forEach(b => {
+                        b.classList.remove('difficulty-btn-active');
+                    });
+                    appState.selectedSize = null;
+                    break;
+                case 'training-area':
+                    elements.trainingArea.classList.remove('hidden');
+                    updateTrainingInfo();
+                    break;
+                case 'results-area':
+                    elements.resultsArea.classList.remove('hidden');
+                    break;
+            }
+        }
+        
+        // 更新训练信息显示
+        function updateTrainingInfo() {
+            // 模式名称映射
+            const modeNames = {
+                'numbers': '数字训练',
+                'letters': '字母训练',
+                'poetry': '古诗训练',
+                'classics': '国学训练',
+                'math': '速算训练',
+                'find-diff': '找茬训练'
+            };
+            
+            elements.currentModeText.textContent = modeNames[appState.selectedMode] || '舒尔特训练';
+            elements.currentDifficultyText.textContent = `${appState.selectedSize}×${appState.selectedSize} 方格`;
+            
+            // 更新提示信息
+            updateInstruction();
+        }
+        
+        // 更新提示信息
+        function updateInstruction() {
+            switch(appState.selectedMode) {
+                case 'numbers':
+                    elements.instructionText.textContent = '请按顺序点击数字 1, 2, 3...';
+                    break;
+                case 'letters':
+                    elements.instructionText.textContent = '请按顺序点击字母 A, B, C...';
+                    break;
+                case 'poetry':
+                    elements.instructionText.textContent = '请按诗句顺序点击完成古诗';
+                    break;
+                case 'classics':
+                    elements.instructionText.textContent = '请按经典语句顺序点击';
+                    break;
+                case 'math':
+                    elements.instructionText.textContent = '请计算并点击正确答案';
+                    break;
+                case 'find-diff':
+                    elements.instructionText.textContent = '请找出与其他不同的元素';
+                    break;
+            }
+        }
+        
+        // 开始训练
+        function startTraining() {
+            // 重置状态
+            appState.currentTarget = 1;
+            appState.isTraining = true;
+            
+            // 生成方格数据
+            generateGridData();
+            
+            // 创建方格
+            createGrid();
+            
+            // 更新进度
+            updateProgress();
+            
+            // 开始计时
+            startTimer();
+        }
+        
+        // 停止训练
+        function stopTraining() {
+            appState.isTraining = false;
+            if (appState.timerInterval) {
+                clearInterval(appState.timerInterval);
+                appState.timerInterval = null;
+            }
+        }
+        
+        // 完成训练
+        function completeTraining() {
+            stopTraining();
+            appState.endTime = new Date();
+            
+            // 计算用时
+            const timeTaken = (appState.endTime - appState.startTime) / 1000;
+            
+            // 更新结果页面
+            updateResults(timeTaken);
+            
+            // 切换到结果页面
+            switchView('results-area');
+        }
+        
+        // 生成方格数据
+        function generateGridData() {
+            const size = appState.selectedSize;
+            appState.totalTargets = size * size;
+            appState.gridData = [];
+            
+            switch(appState.selectedMode) {
+                case 'numbers':
+                    // 生成数字1到n²的随机排列
+                    const numbers = Array.from({length: appState.totalTargets}, (_, i) => i + 1);
+                    appState.gridData = shuffleArray(numbers);
+                    break;
+                    
+                case 'letters':
+                    // 生成字母A到对应字母的随机排列
+                    const letters = Array.from({length: appState.totalTargets}, (_, i) => 
+                        String.fromCharCode(65 + i) // A的ASCII码是65
+                    );
+                    appState.gridData = shuffleArray(letters);
+                    break;
+                    
+                case 'poetry':
+                    // 从古诗数据中随机选择句子
+                    const selectedPoetry = [...poetryData].slice(0, appState.totalTargets);
+                    appState.gridData = shuffleArray(selectedPoetry);
+                    break;
+                    
+                case 'classics':
+                    // 从国学数据中随机选择句子
+                    const selectedClassics = [...classicsData].slice(0, appState.totalTargets);
+                    appState.gridData = shuffleArray(selectedClassics);
+                    break;
+                    
+                case 'math':
+                    // 生成简单的算术题和答案
+                    appState.gridData = [];
+                    // 正确答案
+                    const answer = Math.floor(Math.random() * 10) + 1;
+                    // 生成问题
+                    const firstNum = Math.floor(Math.random() * 10) + 1;
+                    const secondNum = firstNum + answer;
+                    const question = `${secondNum} - ${firstNum} = ?`;
+                    
+                    // 添加问题到第一个位置
+                    appState.gridData.push({type: 'question', value: question});
+                    
+                    // 生成干扰答案
+                    const answers = new Set();
+                    answers.add(answer);
+                    
+                    while (answers.size < appState.totalTargets) {
+                        let wrongAnswer;
+                        do {
+                            wrongAnswer = Math.floor(Math.random() * 20) + 1;
+                        } while (wrongAnswer === answer || answers.has(wrongAnswer));
+                        answers.add(wrongAnswer);
+                    }
+                    
+                    // 添加答案选项
+                    Array.from(answers).forEach(num => {
+                        appState.gridData.push({
+                            type: 'answer',
+                            value: num,
+                            correct: num === answer
+                        });
+                    });
+                    
+                    // 打乱顺序
+                    appState.gridData = shuffleArray(appState.gridData);
+                    break;
+                    
+                case 'find-diff':
+                    // 生成大部分相同，一个不同的元素
+                    const baseElement = Math.floor(Math.random() * 10) + 1;
+                    let diffElement;
+                    do {
+                        diffElement = Math.floor(Math.random() * 10) + 1;
+                    } while (diffElement === baseElement);
+                    
+                    // 随机选择一个位置作为不同的元素
+                    const diffPosition = Math.floor(Math.random() * appState.totalTargets);
+                    
+                    appState.gridData = Array.from({length: appState.totalTargets}, (_, i) => {
+                        const value = i === diffPosition ? diffElement : baseElement;
+                        return {
+                            value: value,
+                            isDifferent: i === diffPosition
+                        };
+                    });
+                    break;
+            }
+        }
+        
+        // 创建方格
+        function createGrid() {
+            const size = appState.selectedSize;
+            elements.gridContainer.innerHTML = '';
+            
+            // 设置网格布局
+            elements.gridContainer.style.display = 'grid';
+            elements.gridContainer.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+            elements.gridContainer.style.gridGap = '4px';
+            
+            // 创建每个单元格
+            appState.gridData.forEach((item, index) => {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell bg-gray-50 text-dark';
+                cell.dataset.index = index;
+                
+                // 根据模式设置单元格内容
+                if (appState.selectedMode === 'math') {
+                    cell.textContent = item.value;
+                    if (item.type === 'question') {
+                        cell.classList.add('bg-primary/10', 'text-primary');
+                    }
+                } else if (appState.selectedMode === 'find-diff') {
+                    cell.textContent = item.value;
+                    if (item.isDifferent) {
+                        // 视觉上略有不同，但不明显
+                        cell.classList.add('border-2', 'border-transparent');
+                    }
+                } else {
+                    cell.textContent = item;
+                }
+                
+                // 添加点击事件
+                cell.addEventListener('click', () => handleCellClick(cell, index));
+                
+                elements.gridContainer.appendChild(cell);
+            });
+        }
+        
+        // 处理单元格点击
+        function handleCellClick(cell, index) {
+            if (!appState.isTraining) return;
+            
+            let isCorrect = false;
+            
+            switch(appState.selectedMode) {
+                case 'numbers':
+                    // 检查是否是当前目标数字
+                    isCorrect = parseInt(appState.gridData[index]) === appState.currentTarget;
+                    break;
+                    
+                case 'letters':
+                    // 检查是否是当前目标字母 (A=1, B=2, ...)
+                    const targetLetter = String.fromCharCode(64 + appState.currentTarget);
+                    isCorrect = appState.gridData[index] === targetLetter;
+                    break;
+                    
+                case 'poetry':
+                case 'classics':
+                    // 检查是否是当前目标文本
+                    isCorrect = index === appState.gridData.indexOf(
+                        appState.selectedMode === 'poetry' ? 
+                        poetryData[appState.currentTarget - 1] : 
+                        classicsData[appState.currentTarget - 1]
+                    );
+                    break;
+                    
+                case 'math':
+                    // 检查是否点击了正确答案
+                    isCorrect = appState.gridData[index].type === 'answer' && 
+                                appState.gridData[index].correct;
+                    break;
+                    
+                case 'find-diff':
+                    // 检查是否点击了不同的元素
+                    isCorrect = appState.gridData[index].isDifferent;
+                    break;
+            }
+            
+            // 处理正确点击
+            if (isCorrect) {
+                cell.classList.add('grid-cell-completed');
+                
+                // 对于数学和找茬模式，直接完成
+                if (appState.selectedMode === 'math' || appState.selectedMode === 'find-diff') {
+                    completeTraining();
+                    return;
+                }
+                
+                // 进入下一个目标
+                appState.currentTarget++;
+                updateProgress();
+                
+                // 检查是否完成所有目标
+                if (appState.currentTarget > appState.totalTargets) {
+                    completeTraining();
+                }
+            } else {
+                // 错误反馈
+                cell.classList.add('bg-red-100', 'text-red-500');
+                setTimeout(() => {
+                    cell.classList.remove('bg-red-100', 'text-red-500');
+                }, 300);
+            }
+        }
+        
+        // 更新进度显示
+        function updateProgress() {
+            const progress = (appState.currentTarget - 1) / appState.totalTargets * 100;
+            elements.progressBar.style.width = `${progress}%`;
+            elements.progressText.textContent = `${appState.currentTarget - 1}/${appState.totalTargets}`;
+            
+            // 更新当前目标显示
+            if (appState.selectedMode === 'numbers') {
+                elements.currentTarget.textContent = `当前目标: ${appState.currentTarget}`;
+            } else if (appState.selectedMode === 'letters') {
+                const targetLetter = String.fromCharCode(64 + appState.currentTarget);
+                elements.currentTarget.textContent = `当前目标: ${targetLetter}`;
+            } else if (appState.selectedMode === 'poetry' || appState.selectedMode === 'classics') {
+                const targetText = appState.selectedMode === 'poetry' ? 
+                                 poetryData[appState.currentTarget - 1] : 
+                                 classicsData[appState.currentTarget - 1];
+                elements.currentTarget.textContent = `当前目标: ${targetText}`;
+            }
+        }
+        
+        // 开始计时器
+        function startTimer() {
+            appState.startTime = new Date();
+            
+            if (appState.timerInterval) {
+                clearInterval(appState.timerInterval);
+            }
+            
+            appState.timerInterval = setInterval(() => {
+                const currentTime = new Date();
+                const elapsedTime = currentTime - appState.startTime;
+                
+                // 格式化时间为 mm:ss.xxx
+                const minutes = Math.floor(elapsedTime / 60000).toString().padStart(2, '0');
+                const seconds = Math.floor((elapsedTime % 60000) / 1000).toString().padStart(2, '0');
+                const milliseconds = Math.floor((elapsedTime % 1000)).toString().padStart(3, '0');
+                
+                elements.timer.textContent = `${minutes}:${seconds}.${milliseconds}`;
+            }, 10);
+        }
+        
+        // 更新结果页面
+        function updateResults(timeTaken) {
+            // 格式化时间
+            const minutes = Math.floor(timeTaken / 60).toString().padStart(2, '0');
+            const seconds = Math.floor(timeTaken % 60).toString().padStart(2, '0');
+            const milliseconds = Math.floor((timeTaken % 1) * 1000).toString().padStart(3, '0');
+            
+            elements.resultTime.textContent = `${minutes}:${seconds}.${milliseconds}`;
+            elements.resultDifficulty.textContent = `${appState.selectedSize}×${appState.selectedSize}`;
+            
+            // 计算评分 (基于时间和难度)
+            let rating = 0;
+            let ratingText = '';
+            
+            // 简单的评分算法
+            const baseTimePerCell = 1.5; // 每个单元格的基准时间(秒)
+            const expectedTime = appState.totalTargets * baseTimePerCell;
+            
+            if (timeTaken <= expectedTime * 0.5) {
+                rating = 5;
+                ratingText = '优秀!';
+            } else if (timeTaken <= expectedTime * 0.75) {
+                rating = 4;
+                ratingText = '很好';
+            } else if (timeTaken <= expectedTime) {
+                rating = 3;
+                ratingText = '良好';
+            } else if (timeTaken <= expectedTime * 1.5) {
+                rating = 2;
+                ratingText = '一般';
+            } else {
+                rating = 1;
+                ratingText = '继续努力';
+            }
+            
+            // 更新评分显示
+            elements.performanceRating.innerHTML = '';
+            for (let i = 1; i <= 5; i++) {
+                const star = document.createElement('i');
+                star.className = `fa fa-star ${i <= rating ? 'text-accent' : 'text-gray-300'}`;
+                elements.performanceRating.appendChild(star);
+            }
+            
+            elements.ratingText.textContent = ratingText;
+        }
+        
+        // 工具函数: 打乱数组顺序
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+        
+        // 初始化应用
+        function initApp() {
+            setupEventListeners();
+            switchView('mode-selection');
+        }
+        
+        // 启动应用
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
 </html>
